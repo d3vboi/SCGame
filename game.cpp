@@ -39,8 +39,12 @@ std::string toUpper(const std::string &input) {
 
 std::string getText() {
     // placeholder
-    return "In the forest deep and green,\n"
-           "Lies a world we've never seen.";
+    return "Sometimes we make the process more complicated than we need to.\n"
+    "We will never make a journey of a thousand miles\n"
+    "by fretting about how long it will take or how hard it will be.\n"
+    "We make the journey by taking each day step by step\n"
+    "and then repeating it again and again until we reach our destination.";
+    // Joseph B. Wirthlin
 }
 
 // Function to generate a lettermap
@@ -86,6 +90,7 @@ void printBoard(const std::string &text, int cursorCol = 0, int cursorRow = 0, c
     std::string fgGray = "\033[90m";
     std::string fgWhiteBold = "\033[1;97m";
     std::string fgWhite = "\033[97m";
+    std::string underline = "\033[4m";
     std::string reset = "\033[0m";
 
     int currentRow = 0;
@@ -106,9 +111,9 @@ void printBoard(const std::string &text, int cursorCol = 0, int cursorRow = 0, c
         char displayChar = (replacements.count(ch) > 0) ? replacements.at(ch) : ch;
 
         if (currentRow == cursorRow && currentCol == cursorCol) {
-            std::cout << fgWhite << displayChar << reset; // Highlight current character
+            std::cout << fgWhite << underline << displayChar << reset; // Highlight current character
         } else if (replacements.count(ch) > 0) {
-            std::cout << fgWhiteBold << displayChar << reset; // Replaced characters
+            std::cout << fgWhiteBold << underline << displayChar << reset; // Replaced characters
         } else {
             std::cout << fgGray << displayChar << reset; // Default characters
         }
@@ -118,7 +123,28 @@ void printBoard(const std::string &text, int cursorCol = 0, int cursorRow = 0, c
     std::cout << std::endl;
 }
 
-// Function to handle arrow keys for navigation
+// Find the char at the current position
+char getCharAtCursor(const std::string &text, const int &cursorRow, const int &cursorCol) {
+    char currentChar = '\0';
+    int currentRow = 0, currentCol = 0;
+    for (const char &ch : text) {
+        if (ch == '\n') {
+            currentRow++;
+            currentCol = 0;
+            if (currentRow > cursorRow) break;
+            continue;
+        }
+        if (currentRow == cursorRow && currentCol == cursorCol) {
+            currentChar = ch;
+            break;
+        }
+        currentCol++;
+    }
+    
+    return currentChar;
+}
+
+// Main game function
 void playVisual() {
     int cursorRow = 0;
     int cursorCol = 0;
@@ -142,64 +168,44 @@ void playVisual() {
                     cursorRow = std::min(cursorRow + 1, static_cast<int>(std::count(text.begin(), text.end(), '\n')));
                     break;
                 case 'C': // Right arrow
-                    cursorCol++;
+                    if (getCharAtCursor(text, cursorRow, cursorCol+1) == '\n') {
+                        cursorRow = std::min(cursorRow + 1, static_cast<int>(std::count(text.begin(), text.end(), '\n')));
+                        cursorCol = 0;
+                    } else {
+                        cursorCol++;
+                    }
+
                     break;
                 case 'D': // Left arrow
                     cursorCol = std::max(0, cursorCol - 1);
                     break;
             }
-        } else if (std::isalpha(input)) { // Letter input
-            // Determine the character at the cursor position
-            int currentRow = 0, currentCol = 0;
-            char currentChar = '\0';
-            for (const char &ch : text) {
-                if (ch == '\n') {
-                    currentRow++;
-                    currentCol = 0;
-                    if (currentRow > cursorRow) break;
-                    continue;
-                }
-
-                if (currentRow == cursorRow && currentCol == cursorCol) {
-                    currentChar = ch;
-                    break;
-                }
-
-                currentCol++;
-            }
+        } else if (std::isalpha(input)) {
+            input = std::toupper(input);
+            // find the character at the cursor
+            char currentChar = getCharAtCursor(text, cursorRow, cursorCol);
 
             if (std::isalpha(currentChar)) {
                 // Assign or reassign the replacement
                 replacements[currentChar] = input;
             }
-        } else if (input == 127) { // Backspace key (ASCII 127)
-            // Determine the character at the cursor position
-            int currentRow = 0, currentCol = 0;
-            char currentChar = '\0';
-            for (const char &ch : text) {
-                if (ch == '\n') {
-                    currentRow++;
-                    currentCol = 0;
-                    if (currentRow > cursorRow) break;
-                    continue;
-                }
-
-                if (currentRow == cursorRow && currentCol == cursorCol) {
-                    currentChar = ch;
-                    break;
-                }
-
-                currentCol++;
-            }
+            // Move the cursor
+            if (getCharAtCursor(text, cursorRow, cursorCol+1) == '\n') {
+                        cursorRow = std::min(cursorRow + 1, static_cast<int>(std::count(text.begin(), text.end(), '\n')));
+                        cursorCol = 0;
+                    } else {
+                        cursorCol++;
+                    }
+        } else if (input == 127) { // Backspace (ASCII 127)
+            char currentChar = getCharAtCursor(text, cursorRow, cursorCol);
 
             if (std::isalpha(currentChar) && replacements.count(currentChar) > 0) {
-                // Remove the replacement and revert to the original
+                // Remove the replacement
                 replacements.erase(currentChar);
             }
         }
     }
 }
-
 
 void helpMenu() {
     std::cout << "Usage: TODO " << std::endl;
